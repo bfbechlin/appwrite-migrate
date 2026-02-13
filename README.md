@@ -1,0 +1,174 @@
+# Appwrite Migrations
+
+A Node.js (ESM) package to manage Appwrite infrastructure via Version Snapshots. This tool uses a "desired state" approach, where each version is a folder containing a complete snapshot of the schema (`appwrite.json`) and data migration logic.
+
+## Features
+
+- **Version Control for Appwrite Schema**: Manage your `appwrite.json` snapshots alongside your code.
+- **Data Migrations**: Execute TypeScript or JavaScript migration scripts (`up` and `down`).
+- **State Management**: Tracks applied migrations in a dedicated Appwrite collection (`system_migrations`).
+- **Automated Schema Sync**: Automatically applies `appwrite.json` snapshots using the Appwrite CLI.
+- **Backup Hooks**: Supports executing external backup commands before migration.
+- **Attribute Polling**: Ensures schema attributes are `available` before running data scripts.
+
+## Installation
+
+```bash
+npm install -g appwrite-migrations
+# or
+npm install --save-dev appwrite-migrations
+```
+
+## Prerequisites
+
+- **Node.js**: v18 or higher.
+- **Appwrite CLI**: Installed and authenticated (`appwrite login`).
+- **Environment Variables**: The following variables must be set in your `.env` file:
+
+```env
+APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+APPWRITE_PROJECT_ID=your_project_id
+APPWRITE_API_KEY=your_api_key
+BACKUP_COMMAND="docker exec appwrite-mariadb mysqldump ..." # Optional
+```
+
+## CI/CD & Automated Deployment (No Login Required)
+
+This tool is designed to work in CI/CD environments without interactive login.
+
+1.  **Install Appwrite CLI**: Ensure `appwrite-cli` is installed in your environment (`npm install -g appwrite-cli`).
+2.  **Set Environment Variables**: Configure `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID`, and `APPWRITE_API_KEY`.
+3.  **Automatic Configuration**: When `appwrite-migrate run` is executed, it detects these variables and automatically configures the local Appwrite CLI instance using `appwrite client --key`.
+
+**Required API Key Scopes:**
+
+- `collections.read`, `collections.write`
+- `documents.read`, `documents.write`
+- `attributes.read`, `attributes.write`
+- `indexes.read`, `indexes.write`
+
+## Quick Start
+
+### 1. Initialize the Project
+
+Run the init command to create the necessary folder structure:
+
+```bash
+npx appwrite-migrate init
+```
+
+This creates:
+
+- `appwrite/migration/` directory.
+- `appwrite/migration/config.json` configuration file.
+
+### 2. Setup System Collection
+
+Create the internal collection used to track migration status:
+
+```bash
+npx appwrite-migrate setup
+```
+
+### 3. Create a Migration
+
+To create a new migration version:
+
+```bash
+npx appwrite-migrate create "initial_schema"
+```
+
+This command:
+
+1.  Creates a new folder `appwrite/migration/v1/` (auto-increments version).
+2.  Generates an `index.ts` file with a boilerplate migration script.
+3.  Copies the current `appwrite.json` from your project root (snapshot) into the version folder.
+
+**Folder Structure:**
+
+```
+/appwrite
+  /migration
+    config.json
+    /v1
+      index.ts        <-- Migration logic
+      appwrite.json   <-- Schema snapshot for this version
+    /v2
+      index.ts
+      appwrite.json
+```
+
+### 4. Edit Migration Logic
+
+Edit `appwrite/migration/vX/index.ts` to define your data changes:
+
+```typescript
+import { Migration } from 'appwrite-migrations';
+
+const migration: Migration = {
+  id: 'uuid-generated-id',
+  description: 'Update finance schema',
+  requiresBackup: true,
+
+  up: async ({ client, databases, log }) => {
+    log('Seeding initial data...');
+    await databases.createDocument('db', 'users', 'unique()', {
+      name: 'Admin',
+      role: 'admin',
+    });
+  },
+
+  down: async ({ client, databases, log }) => {
+    // Logic to revert changes
+  },
+};
+
+export default migration;
+```
+
+### 5. Run Migrations
+
+Execute all pending migrations:
+
+```bash
+npx appwrite-migrate run
+```
+
+The runner performs the following steps for each pending version:
+
+1.  **Backup**: Runs `BACKUP_COMMAND` if `requiresBackup` is true.
+2.  **Schema Sync**: Deploys the version's `appwrite.json` using `appwrite deploy`.
+3.  **Polling**: Waits for all schema attributes to become `available`.
+4.  **Execution**: Runs the `up` function defined in `index.ts`.
+5.  **Finalization**: Updates the root `appwrite.json` and records the migration in the database.
+
+### 6. Check Status
+
+View the history of applied migrations:
+
+```bash
+npx appwrite-migrate status
+```
+
+## Configuration (`appwrite/migration/config.json`)
+
+```json
+{
+  "collection": "system_migrations",
+  "databaseId": "default"
+}
+```
+
+## CLI Commands
+
+| Command         | Description                                            |
+| :-------------- | :----------------------------------------------------- |
+| `init`          | Initialize the `appwrite` folder structure and config. |
+| `setup`         | Create the `system_migrations` collection in Appwrite. |
+| `create <name>` | Create a new migration version folder with snapshot.   |
+| `run`           | Execute all pending migrations in order.               |
+| `status`        | List applied and pending migrations.                   |
+
+## License
+
+ISC
