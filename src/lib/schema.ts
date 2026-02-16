@@ -16,41 +16,52 @@ export const fetchProjectSchema = async (config: AppConfig) => {
   const dbsList = await databases.list([Query.limit(100)]);
   const allCollections: any[] = [];
 
+  console.log(`Found ${dbsList.databases.length} databases.`);
+
   for (const db of dbsList.databases) {
     if (db.$id === 'system') continue; // Skip internal system DB if strictly internal
+    console.log(`Fetching collections for database ${db.$id}...`);
 
-    // 2. Fetch all collections for this DB
-    const colsList = await databases.listCollections(db.$id, [Query.limit(100)]);
+    try {
+      // 2. Fetch all collections for this DB
+      const colsList = await databases.listCollections(db.$id, [Query.limit(100)]);
+      console.log(`Found ${colsList.collections.length} collections in ${db.$id}.`);
 
-    for (const col of colsList.collections) {
-      // 3. For each collection, we need full details (attributes, indexes).
-      // listCollections might not return full details of attributes/indexes in some versions,
-      // but usually it does or we verify.
-      // Let's explicitly get the collection to be sure we have everything if needed,
-      // but the list response usually has them.
-      // However, the `appwrite.json` format expects specific fields.
+      for (const col of colsList.collections) {
+        // 3. For each collection, we need full details (attributes, indexes).
+        // listCollections might not return full details of attributes/indexes in some versions,
+        // but usually it does or we verify.
+        // Let's explicitly get the collection to be sure we have everything if needed,
+        // but the list response usually has them.
+        // However, the `appwrite.json` format expects specific fields.
 
-      // Map SDK response to appwrite.json format
-      // SDK keys might start with $. appwrite.json usually expects them without $ for some, or with?
-      // Actually appwrite-cli appwrite.json usually KEEP $id, $permissions etc.
-      // Let's look at a sample appwrite.json if possible or assume standard.
-      // Standard appwrite.json from `init project`:
-      // {
-      //   "$id": "...",
-      //   "$permissions": [...],
-      //   "databaseId": "...",
-      //   ...
-      //   "attributes": [...],
-      //   "indexes": [...]
-      // }
+        // Map SDK response to appwrite.json format
+        // SDK keys might start with $. appwrite.json usually expects them without $ for some, or with?
+        // Actually appwrite-cli appwrite.json usually KEEP $id, $permissions etc.
+        // Let's look at a sample appwrite.json if possible or assume standard.
+        // Standard appwrite.json from `init project`:
+        // {
+        //   "$id": "...",
+        //   "$permissions": [...],
+        //   "databaseId": "...",
+        //   ...
+        //   "attributes": [...],
+        //   "indexes": [...]
+        // }
 
-      // We need to ensure we inject `databaseId` because deployments need to know where it goes.
-      const collectionData = {
-        ...col,
-        databaseId: db.$id, // Important for deployment
-      };
+        // We need to ensure we inject `databaseId` because deployments need to know where it goes.
+        const collectionData = {
+          ...col,
+          databaseId: db.$id, // Important for deployment
+        };
 
-      allCollections.push(collectionData);
+        allCollections.push(collectionData);
+      }
+    } catch (err: any) {
+      console.error(`Error fetching collections for DB ${db.$id}:`, err.message);
+      // Decide if we want to fail hard or skip.
+      // For now, let's rethrow to see the error.
+      throw err;
     }
   }
 

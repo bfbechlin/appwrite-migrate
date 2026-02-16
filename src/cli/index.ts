@@ -217,6 +217,10 @@ migrations
       }
     } catch (error: any) {
       console.error(chalk.red(`Failed to update snapshot: ${error.message}`));
+      if (error.response) {
+        console.error(chalk.red('Server Response:'), JSON.stringify(error.response, null, 2));
+      }
+      console.error(error);
       process.exit(1);
     }
   });
