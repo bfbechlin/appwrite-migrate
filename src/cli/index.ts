@@ -131,25 +131,12 @@ export default migration;
       fs.copyFileSync(sourceJson, path.join(versionPath, 'appwrite.json'));
       console.log(chalk.green(`Copied snapshot from ${sourceJson}`));
     } else {
-      // Revert creation if snapshot fails? Or just Warn?
-      // User says "Ao criar a migração um snapshot precisa ser buscado e colocado dentro da versão!"
-      // So failing is appropriate if we can't get it.
-      // But maybe user just initialized?
-      console.error(chalk.red('Error: No appwrite.json found to copy as snapshot.'));
-      console.error(
+      console.warn(chalk.yellow('Warning: No appwrite.json found to copy as snapshot.'));
+      console.warn(
         chalk.yellow(
-          'Please ensure you have an appwrite.json file in your project root or previous migrations.',
+          'This migration will not include a schema snapshot. You can generate one later by running "appwrite init project".',
         ),
       );
-      console.error(
-        chalk.yellow(
-          'You can generate one by running "appwrite init project" or "appwrite init collection" using the Appwrite CLI.',
-        ),
-      );
-
-      // Cleanup
-      fs.rmSync(versionPath, { recursive: true, force: true });
-      process.exit(1);
     }
 
     console.log(chalk.green(`Created migration v${nextVersion} at ${versionPath}`));
