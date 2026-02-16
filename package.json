@@ -12,8 +12,12 @@
     "dev": "tsx src/cli/index.ts",
     "lint": "eslint . --fix",
     "format": "prettier . --write",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "npm run build"
   },
+  "files": [
+    "dist"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
