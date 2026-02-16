@@ -76,7 +76,7 @@ This tool is designed to work in CI/CD environments without interactive login.
 Run the init command to create the necessary folder structure:
 
 ```bash
-npx appwrite-ctl migrations init
+npx appwrite-ctl init
 ```
 
 This creates:
@@ -185,7 +185,7 @@ npx appwrite-ctl migrations status
 
 | Command         | Description                                            |
 | :-------------- | :----------------------------------------------------- |
-| `migrations init`          | Initialize the `appwrite` folder structure and config. |
+| `init`          | Initialize the project folder structure and config. |
 | `migrations setup`         | Create the `system` database and `migrations` collection in Appwrite. |
 | `migrations create <name>` | Create a new migration version folder with snapshot.   |
 | `migrations run`           | Execute all pending migrations in order.               |

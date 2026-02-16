@@ -20,11 +20,9 @@ program.name('appwrite-ctl').description('Appwrite CLI for managing migrations a
 
 program.option('-e, --env <path>', 'Path to environment file', '.env');
 
-const migrations = program.command('migrations').description('Manage Appwrite migrations');
-
-migrations
+program
   .command('init')
-  .description('Initialize the migrations project structure')
+  .description('Initialize the project structure')
   .action(async () => {
     const rootDir = process.cwd();
     const appwriteDir = path.join(rootDir, 'appwrite');
@@ -47,6 +45,8 @@ migrations
 
     console.log(chalk.green('Initialization complete.'));
   });
+
+const migrations = program.command('migrations').description('Manage Appwrite migrations');
 
 migrations
   .command('setup')
