@@ -16,7 +16,7 @@ export interface AppConfig {
  */
 export const loadConfig = (envPath: string = '.env'): AppConfig => {
   // Load environment variables.
-  dotenv.config({ path: path.resolve(process.cwd(), envPath) });
+  dotenv.config({ path: path.resolve(process.cwd(), envPath), override: true });
 
   const endpoint = process.env.APPWRITE_ENDPOINT;
   const projectId = process.env.APPWRITE_PROJECT_ID;
