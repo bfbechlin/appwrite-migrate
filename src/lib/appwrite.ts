@@ -1,6 +1,9 @@
 import { Client, Databases, ID, Query } from 'node-appwrite';
 import { AppConfig } from './config.js';
 
+/**
+ * Create Appwrite Client and Databases instance.
+ */
 export const createAppwriteClient = (config: AppConfig) => {
   const client = new Client()
     .setEndpoint(config.endpoint)
@@ -12,8 +15,11 @@ export const createAppwriteClient = (config: AppConfig) => {
   return { client, databases };
 };
 
+/**
+ * Ensure the system database and migrations collection exist.
+ */
 export const ensureMigrationCollection = async (databases: Databases, config: AppConfig) => {
-  // Ensure the system database exists
+  // Ensure the system database exists.
   try {
     await databases.get(config.database);
   } catch (error: any) {
@@ -25,7 +31,7 @@ export const ensureMigrationCollection = async (databases: Databases, config: Ap
     }
   }
 
-  // Ensure the migration collection exists within the system database
+  // Ensure the migration collection exists within the system database.
   try {
     await databases.getCollection(config.database, config.migrationCollectionId);
   } catch (error: any) {
@@ -55,6 +61,9 @@ export const ensureMigrationCollection = async (databases: Databases, config: Ap
   }
 };
 
+/**
+ * Get list of applied migration IDs.
+ */
 export const getAppliedMigrations = async (
   databases: Databases,
   config: AppConfig,
@@ -66,13 +75,16 @@ export const getAppliedMigrations = async (
     return response.documents.map((doc) => doc.$id);
   } catch (error: any) {
     if (error.code === 404) {
-      // If DB or Collection unavailable, no migrations applied
+      // If DB or Collection unavailable, no migrations applied.
       return [];
     }
     throw error;
   }
 };
 
+/**
+ * Record a successfully applied migration.
+ */
 export const recordMigration = async (
   databases: Databases,
   config: AppConfig,

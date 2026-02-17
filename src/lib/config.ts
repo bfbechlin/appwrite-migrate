@@ -11,8 +11,11 @@ export interface AppConfig {
   backupCommand?: string;
 }
 
+/**
+ * Load configuration from environment variables or .env file.
+ */
 export const loadConfig = (envPath: string = '.env'): AppConfig => {
-  // Load environment variables from specific file
+  // Load environment variables.
   dotenv.config({ path: path.resolve(process.cwd(), envPath) });
 
   const endpoint = process.env.APPWRITE_ENDPOINT;
@@ -26,7 +29,7 @@ export const loadConfig = (envPath: string = '.env'): AppConfig => {
     );
   }
 
-  // Find root directory (where package.json/appwrite folder is)
+  // Find root directory.
   const rootDir = process.cwd();
   const configPath = path.join(rootDir, 'appwrite', 'migration', 'config.json');
 
@@ -42,7 +45,7 @@ export const loadConfig = (envPath: string = '.env'): AppConfig => {
       if (fileConfig.database) {
         database = fileConfig.database;
       } else if (fileConfig.databaseId) {
-        // Backward compatibility
+        // Backward compatibility.
         database = fileConfig.databaseId;
       }
     } catch (error) {

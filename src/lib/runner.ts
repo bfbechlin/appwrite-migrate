@@ -10,17 +10,20 @@ import chalk from 'chalk';
 
 const jiti = createJiti(import.meta.url);
 
+/**
+ * Run pending migrations.
+ */
 export const runMigrations = async (envPath: string = '.env') => {
   const config = loadConfig(envPath);
   const { client, databases } = createAppwriteClient(config);
 
   console.log('Starting migration process...');
 
-  // 0. Configure CLI with API key (non-interactive auth)
+  // 0. Configure CLI with API key (non-interactive auth).
   console.log('Configuring Appwrite CLI...');
   await configureClient(config);
 
-  // 1. Discovery
+  // 1. Discovery.
   const migrationsDir = path.join(process.cwd(), 'appwrite', 'migration');
   if (!fs.existsSync(migrationsDir)) {
     console.error(`Migrations directory not found at ${migrationsDir}`);
@@ -40,7 +43,7 @@ export const runMigrations = async (envPath: string = '.env') => {
 
   console.log(`Found ${versionDirs.length} versions.`);
 
-  // 2. State Check
+  // 2. State Check.
   const appliedMigrationIds = await getAppliedMigrations(databases, config);
   const appliedSet = new Set(appliedMigrationIds);
 
@@ -62,7 +65,7 @@ export const runMigrations = async (envPath: string = '.env') => {
       continue;
     }
 
-    // Load migration file using jiti
+    // Load migration file using jiti.
     let migrationModule;
     try {
       migrationModule = await jiti.import(validIndexFile);
@@ -85,7 +88,7 @@ export const runMigrations = async (envPath: string = '.env') => {
 
     console.log(`Applying version ${version} (${migration.id})...`);
 
-    // 3. Backup Hook
+    // 3. Backup hook.
     if (migration.requiresBackup && config.backupCommand) {
       console.log('Running backup command...');
       try {
@@ -103,7 +106,7 @@ export const runMigrations = async (envPath: string = '.env') => {
       );
     }
 
-    // 4. Schema Sync via CLI push
+    // 4. Schema sync via CLI push.
     const snapshotPath = path.join(versionPath, snapshotFilename);
     if (fs.existsSync(snapshotPath)) {
       console.log(`Pushing schema snapshot for ${version}...`);
@@ -118,12 +121,12 @@ export const runMigrations = async (envPath: string = '.env') => {
       console.warn(`No ${snapshotFilename} found in ${version}. Skipping schema sync.`);
     }
 
-    // 5. Attribute Polling
+    // 5. Attribute polling.
     if (fs.existsSync(snapshotPath)) {
       await waitForAttributes(databases, snapshotPath);
     }
 
-    // 6. Data Execution
+    // 6. Data execution.
     console.log('Executing migration script...');
     const context: MigrationContext = {
       client,
@@ -141,7 +144,7 @@ export const runMigrations = async (envPath: string = '.env') => {
       }
     }
 
-    // 7. Finalization
+    // 7. Finalization.
     console.log('Finalizing...');
     await recordMigration(databases, config, migration.id, version);
 
@@ -162,11 +165,11 @@ async function waitForAttributes(databases: Databases, snapshotPath: string) {
     return;
   }
 
-  // appwrite.config.json format: tables[] with databaseId from tablesDB[]
+  // appwrite.config.json format: tables[] with databaseId from tablesDB[].
   const tables = schema.tables || [];
   const tablesDB = schema.tablesDB || [];
 
-  // Build a map of database $id -> database info
+  // Build a map of database $id -> database info.
   const dbMap = new Map<string, any>();
   for (const db of tablesDB) {
     dbMap.set(db.$id, db);

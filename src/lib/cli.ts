@@ -30,7 +30,7 @@ export const configureClient = async (config: AppConfig): Promise<void> => {
   }
 };
 
-// Resource types to sync (excludes 'settings' which requires interactive login)
+// Resource types to sync (excludes 'settings' which requires interactive login).
 const RESOURCES = ['tables', 'buckets', 'teams', 'topics'];
 
 /**
@@ -66,6 +66,11 @@ export const pullSnapshot = async (targetDir: string): Promise<string> => {
   fs.copyFileSync(rootConfig, targetPath);
   console.log(chalk.green(`Snapshot saved to ${targetPath}`));
 
+  // Cleanup: Remove the root appwrite.config.json created by the pull command.
+  if (fs.existsSync(rootConfig)) {
+    fs.unlinkSync(rootConfig);
+  }
+
   return targetPath;
 };
 
@@ -84,13 +89,14 @@ export const pushSnapshot = async (snapshotPath: string): Promise<void> => {
     throw new Error(`Snapshot not found: ${snapshotPath}`);
   }
 
-  // Backup current root config before overwriting
+  // Backup current root config before overwriting.
   const backupPath = rootConfig + '.bak';
-  if (fs.existsSync(rootConfig)) {
+  const originalExists = fs.existsSync(rootConfig);
+  if (originalExists) {
     fs.copyFileSync(rootConfig, backupPath);
   }
 
-  // Copy snapshot to root so CLI picks it up
+  // Copy snapshot to root so CLI picks it up.
   fs.copyFileSync(snapshotPath, rootConfig);
   console.log(chalk.blue('Snapshot copied to project root.'));
 
@@ -110,16 +116,24 @@ export const pushSnapshot = async (snapshotPath: string): Promise<void> => {
       }
     }
   } catch (error) {
-    // Restore backup if push fails
-    if (fs.existsSync(backupPath)) {
+    // Restore backup if push fails.
+    if (originalExists && fs.existsSync(backupPath)) {
       fs.copyFileSync(backupPath, rootConfig);
       console.log(chalk.yellow('Root config restored from backup after push failure.'));
     }
     throw error;
   } finally {
-    // Clean up backup
-    if (fs.existsSync(backupPath)) {
-      fs.unlinkSync(backupPath);
+    // Restore original state.
+    if (originalExists) {
+      if (fs.existsSync(backupPath)) {
+        fs.copyFileSync(backupPath, rootConfig);
+        fs.unlinkSync(backupPath);
+      }
+    } else {
+      // If it didn't exist before, delete the one we created.
+      if (fs.existsSync(rootConfig)) {
+        fs.unlinkSync(rootConfig);
+      }
     }
   }
 };

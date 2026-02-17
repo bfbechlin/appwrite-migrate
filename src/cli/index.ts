@@ -76,6 +76,10 @@ migrations
   .description('Create a new migration version')
   .action(async () => {
     const migrationsDir = path.join(process.cwd(), 'appwrite', 'migration');
+
+    if (!fs.existsSync(migrationsDir)) {
+      fs.mkdirSync(migrationsDir, { recursive: true });
+    }
     const snapshotFilename = getSnapshotFilename();
 
     // Find next version number
@@ -113,10 +117,10 @@ export default migration;
 
     fs.writeFileSync(path.join(versionPath, 'index.ts'), indexContent);
 
-    // Snapshot Logic: copy from previous version or from root appwrite.config.json
+    // Snapshot logic: copy from previous version or from root appwrite.config.json.
     let snapshotSource: string | null = null;
 
-    // First, try the previous version's snapshot
+    // First, try the previous version's snapshot.
     if (versionDirs.length > 0) {
       const lastVersionPath = path.join(
         migrationsDir,
@@ -128,7 +132,7 @@ export default migration;
       }
     }
 
-    // Fallback: root appwrite.config.json
+    // Fallback: root appwrite.config.json.
     if (!snapshotSource) {
       const rootConfig = path.join(process.cwd(), snapshotFilename);
       if (fs.existsSync(rootConfig)) {
@@ -140,7 +144,7 @@ export default migration;
       fs.copyFileSync(snapshotSource, path.join(versionPath, snapshotFilename));
       console.log(chalk.green(`Copied snapshot from ${snapshotSource}`));
     } else {
-      // No local snapshot — pull from Appwrite via CLI
+      // No local snapshot - pull from Appwrite via CLI.
       console.log(chalk.blue('No previous snapshot found. Pulling from Appwrite via CLI...'));
 
       try {
