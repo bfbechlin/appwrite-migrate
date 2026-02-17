@@ -111,7 +111,7 @@ export const runMigrations = async (envPath: string = '.env') => {
     if (fs.existsSync(snapshotPath)) {
       console.log(`Pushing schema snapshot for ${version}...`);
       try {
-        await pushSnapshot(snapshotPath);
+        await pushSnapshot(snapshotPath, config);
       } catch (error: any) {
         console.error('Schema push failed:', error.message);
         console.error("Ensure 'appwrite-cli' is installed and accessible.");

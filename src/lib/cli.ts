@@ -79,9 +79,12 @@ export const pullSnapshot = async (targetDir: string): Promise<string> => {
  * Copies the version's appwrite.config.json to the project root,
  * then runs individual `appwrite push <resource> --all --force` commands.
  *
+ * The `projectId` in the snapshot is rewritten to match the current config,
+ * allowing the same snapshot to be pushed to any environment.
+ *
  * `--all` auto-selects all resources, `--force` auto-confirms changes.
  */
-export const pushSnapshot = async (snapshotPath: string): Promise<void> => {
+export const pushSnapshot = async (snapshotPath: string, config: AppConfig): Promise<void> => {
   const rootDir = process.cwd();
   const rootConfig = path.join(rootDir, SNAPSHOT_FILENAME);
 
@@ -96,9 +99,11 @@ export const pushSnapshot = async (snapshotPath: string): Promise<void> => {
     fs.copyFileSync(rootConfig, backupPath);
   }
 
-  // Copy snapshot to root so CLI picks it up.
-  fs.copyFileSync(snapshotPath, rootConfig);
-  console.log(chalk.blue('Snapshot copied to project root.'));
+  // Copy snapshot to root and rewrite projectId to match current environment.
+  const snapshotData = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
+  snapshotData.projectId = config.projectId;
+  fs.writeFileSync(rootConfig, JSON.stringify(snapshotData, null, 2));
+  console.log(chalk.blue(`Snapshot copied to project root (projectId: ${config.projectId}).`));
 
   try {
     for (const resource of RESOURCES) {
